@@ -30,21 +30,23 @@ app.get('/', (req, res) => {
 });
 
 app.get('/test', async (req, res) => {
-    const r = await axios.get(download_url, {
+    const r = await axios.get(sample_url, {
         responseType: 'stream',
         headers: headers
     });
 
-    r.data.pipe(res)
-    
-    // res.end(JSON.stringify(r.headers));
+    res.writeHead(r.status, r.headers);
+
+    r.data.pipe(res);
 });
 
-app.get('/download/:url', async (req, res) => {
-    const r = await axios.get(req.params.url, {
+app.get('/download/', async (req, res) => {
+    const r = await axios.get(req.query.url, {
         responseType: 'stream',
         headers: headers
     });
+
+    res.writeHead(r.status, r.headers);
 
     r.data.pipe(res)
 });
