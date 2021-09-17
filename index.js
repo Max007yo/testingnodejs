@@ -1,3 +1,4 @@
+const path = require('path');
 const axios = require('axios').default;
 const express = require('express');
 const app = express();
@@ -36,7 +37,6 @@ app.get('/test', async (req, res) => {
     });
 
     res.writeHead(r.status, r.headers);
-
     r.data.pipe(res);
 });
 
@@ -46,9 +46,10 @@ app.get('/download/', async (req, res) => {
         headers: headers
     });
 
+    const p = path.parse(req.query.url);
+    res.setHeader('Content-Disposition', `attachment; filename="${p.base}"`);
     res.writeHead(r.status, r.headers);
-
-    r.data.pipe(res)
+    r.data.pipe(res);
 });
 
 const PORT = process.env.PORT || 3000;
