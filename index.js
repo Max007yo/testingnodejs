@@ -40,9 +40,13 @@ app.get('/test', async (req, res) => {
     // res.end(JSON.stringify(r.headers));
 });
 
-app.get('/download', async (req, res) => {
-    const r = await axios.head(download_url);
-    res.end(JSON.stringify(r.headers));
+app.get('/download/:url', async (req, res) => {
+    const r = await axios.get(req.params.url, {
+        responseType: 'stream',
+        headers: headers
+    });
+
+    r.data.pipe(res)
 });
 
 const PORT = process.env.PORT || 3000;
