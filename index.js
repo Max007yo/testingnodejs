@@ -1,55 +1,47 @@
 const path = require('path');
+
+const Client = require('ftp');
 const axios = require('axios').default;
+
 const express = require('express');
 const app = express();
 
-const download_url = 'https://dl3.downloadly.ir/Files/Elearning/Udemy_Build_Your_Own_First_Person_Shooter_Survival_Game_in_Unity_2019-8.part1_Downloadly.ir.rar';
-const sample_url = 'https://file-examples-com.github.io/uploads/2017/02/zip_2MB.zip';
-
-headers = {
-    // 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    // 'Accept-Encoding': 'gzip, deflate, br',
-    // 'Accept-Language': 'en-US,en;q=0.9',
-    'Connection': 'keep-alive',
-    // 'Host': 'dl3.downloadly.ir',
-    // 'Sec-Fetch-Dest': 'document',
-    // 'Sec-Fetch-Mode': 'navigate',
-    // 'Sec-Fetch-Site': 'none',
-    // 'Sec-Fetch-User': '?1',
-    // 'Sec-GPC': '1',
-    // 'Upgrade-Insecure-Requests': '1',
-    // 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36'
-}
-
-
-app.use((err, req, res, next) => {
-    res.end('err');
-});
+app.use(express.json());
+app.use(express.urlencoded());
 
 app.get('/', (req, res) => {
     res.end('server is up and running...');
 });
 
-app.get('/test', async (req, res) => {
-    const r = await axios.get(sample_url, {
-        responseType: 'stream',
-        headers: headers
+app.post('/upload-to-ftp/', async (req, res, next) => {
+
+    const data = req.body;
+
+    const ftpCredentials = {
+        user: data.username,
+        password: data.password,
+        host: data.hostname
+    }
+
+    const c = new Client();
+
+    c.on('ready', async function() {
+        console.log('connected to ftp')
+        res.end('uploading....')
+        
+        const r = await axios.get(data.uploadUrl, { responseType: 'stream' });
+    
+        c.mkdir(data.uploadPath.toString(), true, err => { if(err) console.log(err) });
+        c.put(r.data, `/${data.uploadPath.toString()}/${path.basename(data.uploadUrl)}`, function(err) {
+            if (err) console.log(err);
+            c.end();
+        });
+
     });
 
-    res.writeHead(r.status, r.headers);
-    r.data.pipe(res);
-});
+    c.on('error', err => console.log(err));
 
-app.get('/download/', async (req, res) => {
-    const r = await axios.get(req.query.url, {
-        responseType: 'stream',
-        headers: headers
-    });
-
-    const p = path.parse(req.query.url);
-    res.setHeader('Content-Disposition', `attachment; filename="${p.base}"`);
-    res.writeHead(r.status, r.headers);
-    r.data.pipe(res);
+    c.connect(ftpCredentials);
 });
 
 const PORT = process.env.PORT || 3000;

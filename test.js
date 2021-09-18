@@ -1,8 +1,23 @@
-const { url } = require('inspector');
-const path = require('path');
+const axios = require('axios').default;
+var Client = require('ftp');
 
-const sample_url = 'https://dl3.downloadly.ir/Files/Elearning/Udemy_Build_Your_Own_First_Person_Shooter_Survival_Game_in_Unity_2019-8.part1_Downloadly.ir.rar';
+var c = new Client();
 
-const p = path.parse(sample_url);
+const sample_url = 'https://file-examples-com.github.io/uploads/2017/02/zip_2MB.zip';
 
-console.log(p.base);
+c.on('ready', async function() {
+    console.log('connected to ftp')
+    
+    const r = await axios.get(sample_url, { responseType: 'stream' });
+
+    c.put(r.data, '/htdocs/sample.zip', function(err) {
+        if (err) throw err;
+        c.end();
+    });
+});
+
+c.connect({
+    user: 'epiz_29761231',
+    password: 'iQ1t71zkFoaWAd',
+    host: 'ftpupload.net',
+});
