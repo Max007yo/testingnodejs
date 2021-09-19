@@ -14,20 +14,32 @@ app.get('/', (req, res) => {
 });
 
 app.post('/upload-to-mega/', (req, res, next) => {
-    try {
-        const storage = new Storage({
-            email: req.body.email,
-            password: req.body.password,
-        }, async () => {
-            const r = await axios.get(req.body.fileUrl, { responseType: 'stream' });
-            r.data.pipe(storage.upload(path.basename(req.body.fileUrl)));
-        });
-
-        res.end('uploading...');
-    } catch(err) {
-        console.log(err)
-        res.end('upload failed');
-    }
+    const storage = new Storage({
+        email: req.body.email,
+        password: req.body.password,
+    }, async err => {
+        if(!err) {
+            console.log('connected to mega with no errors');
+            try {
+                console.log('sending request...');
+                const r = await axios.get(req.body.fileUrl, { responseType: 'stream' });
+                console.log('got response');
+                storage.upload(path.basename(req.body.fileUrl), r.data,
+                    err => {
+                        if(!err) console.log('upload complete');
+                        else console.log(err);
+                });
+                console.log('uploading...');
+                res.end('uploading...');
+            } catch(e) { 
+                console.log(e);
+                res.end(e.message);
+            }
+        }else {
+            console.log(err);
+            res.end(err.message);
+        }
+    });
 });
 
 const PORT = process.env.PORT || 3000;
