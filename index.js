@@ -1,6 +1,6 @@
 const path = require('path');
 
-const Client = require('ftp');
+const { Storage } = require('megajs');
 const axios = require('axios').default;
 
 const express = require('express');
@@ -13,35 +13,21 @@ app.get('/', (req, res) => {
     res.end('server is up and running...');
 });
 
-app.post('/upload-to-ftp/', async (req, res, next) => {
-
-    const data = req.body;
-
-    const ftpCredentials = {
-        user: data.username,
-        password: data.password,
-        host: data.hostname
-    }
-
-    const c = new Client();
-
-    c.on('ready', async function() {
-        console.log('connected to ftp')
-        res.end('uploading....')
-        
-        const r = await axios.get(data.uploadUrl, { responseType: 'stream' });
-    
-        c.mkdir(data.uploadPath.toString(), true, err => { if(err) console.log(err) });
-        c.put(r.data, `/${data.uploadPath.toString()}/${path.basename(data.uploadUrl)}`, function(err) {
-            if (err) console.log(err);
-            c.end();
+app.post('/upload-to-mega/', (req, res, next) => {
+    try {
+        const storage = new Storage({
+            email: req.body.email,
+            password: req.body.password,
+        }, async () => {
+            const r = await axios.get(req.body.fileUrl, { responseType: 'stream' });
+            r.data.pipe(storage.upload(path.basename(req.body.fileUrl)));
         });
 
-    });
-
-    c.on('error', err => console.log(err));
-
-    c.connect(ftpCredentials);
+        res.end('uploading...');
+    } catch(err) {
+        console.log(err)
+        res.end('upload failed');
+    }
 });
 
 const PORT = process.env.PORT || 3000;

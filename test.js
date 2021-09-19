@@ -1,23 +1,17 @@
 const axios = require('axios').default;
-var Client = require('ftp');
+const { Storage } = require('megajs')
 
-var c = new Client();
+const sampleUrl = 'https://file-examples-com.github.io/uploads/2017/02/zip_2MB.zip';
 
-const sample_url = 'https://file-examples-com.github.io/uploads/2017/02/zip_2MB.zip';
+// email: 'mayex66650@sicmag.com',
+// password:  'Max@12345',
 
-c.on('ready', async function() {
-    console.log('connected to ftp')
-    
-    const r = await axios.get(sample_url, { responseType: 'stream' });
-
-    c.put(r.data, '/htdocs/sample.zip', function(err) {
-        if (err) throw err;
-        c.end();
+function uploadToMega(email, password, filePath) {
+    const storage = new Storage({
+        email: email,
+        password: password,
+    }, async () => {
+        const r = await axios.get(sampleUrl, { responseType: 'stream' });
+        r.data.pipe(storage.upload(filePath));
     });
-});
-
-c.connect({
-    user: 'epiz_29761231',
-    password: 'iQ1t71zkFoaWAd',
-    host: 'ftpupload.net',
-});
+}
